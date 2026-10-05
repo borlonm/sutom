@@ -8,3 +8,4 @@ node_modules/
 ts/mots/listeMotsATrouver.ts
 ts/mots/listeMotsProposables.*
 cron.*.sh
+dist/
