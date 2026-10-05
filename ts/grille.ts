@@ -7,7 +7,7 @@ export default class Grille {
   private readonly _propositions: Array<string>;
   private readonly _resultats: Array<Array<LettreResultat>>;
   private readonly _longueurMot: number;
-  private readonly _maxPropositions: number;
+  private readonly _nbLignesMinimum: number;
   private readonly _audioPanel: AudioPanel;
 
   private _indice: Array<string | undefined>;
@@ -15,7 +15,7 @@ export default class Grille {
 
   public constructor(
     longueurMot: number,
-    maxPropositions: number,
+    nbLignesMinimum: number,
     indice: string,
     audioPanel: AudioPanel
   ) {
@@ -23,7 +23,7 @@ export default class Grille {
     this._audioPanel = audioPanel;
 
     this._longueurMot = longueurMot;
-    this._maxPropositions = maxPropositions;
+    this._nbLignesMinimum = nbLignesMinimum;
     this._indice = new Array<string | undefined>(longueurMot);
     this._indice[0] = indice;
 
@@ -37,13 +37,15 @@ export default class Grille {
     let table = document.createElement("table");
     table.setAttribute("aria-live", "polite");
     table.setAttribute("aria-label", "Grille de jeu");
-    for (let nbMot = 0; nbMot < this._maxPropositions; nbMot++) {
+    // Essais illimités : on ajoute une ligne dès que les lignes de départ sont remplies
+    const nbLignes = Math.max(this._nbLignesMinimum, this._motActuel + 1);
+    for (let nbMot = 0; nbMot < nbLignes; nbMot++) {
       let ligne = document.createElement("tr");
       let mot =
         this._propositions.length <= nbMot ? "" : this._propositions[nbMot];
       if (mot.length > 0) {
         ligne.setAttribute("role", "group");
-        ligne.setAttribute("aria-label", `Mot ${nbMot + 1} sur 6, ${mot}`);
+        ligne.setAttribute("aria-label", `Mot ${nbMot + 1}, ${mot}`);
       }
       for (let nbLettre = 0; nbLettre < this._longueurMot; nbLettre++) {
         let cellule = document.createElement("td");
@@ -110,6 +112,11 @@ export default class Grille {
     }
     this._grille.innerHTML = "";
     this._grille.appendChild(table);
+
+    // La ligne en cours est toujours la dernière → on la garde visible quand la grille défile
+    if (nbLignes > this._nbLignesMinimum) {
+      this._grille.scrollTop = this._grille.scrollHeight;
+    }
   }
 
   public actualiserAffichage(mot: string) {

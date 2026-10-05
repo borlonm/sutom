@@ -6,7 +6,7 @@ export default class Configuration {
   public static Default: Configuration = {
     hasAudio: false,
     afficherRegles: true,
-    afficherChrono: false,
+    afficherChrono: true,
     volumeSon: VolumeSon.Normal,
     disposition: ClavierDisposition.Azerty,
     theme: Theme.Sombre,
@@ -16,7 +16,7 @@ export default class Configuration {
 
   hasAudio: boolean = false;
   afficherRegles: boolean = true;
-  afficherChrono: boolean = false;
+  afficherChrono: boolean = true;
   volumeSon: VolumeSon = VolumeSon.Normal;
   disposition: ClavierDisposition = ClavierDisposition.Azerty;
   theme: Theme = Theme.Sombre;
