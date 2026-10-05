@@ -33,7 +33,8 @@ export default class Gestionnaire {
 
   private _motATrouver: string = "";
   private _compositionMotATrouver: { [lettre: string]: number } = {};
-  private _maxNbPropositions: number = 6;
+  // Essais illimités : la grille affiche au moins 6 lignes et s'agrandit au besoin
+  private _nbLignesMinimum: number = 6;
   private _datePartieEnCours: Date;
   private _idPartieEnCours: string;
   private _dateFinPartie: Date | undefined;
@@ -76,7 +77,7 @@ export default class Gestionnaire {
         this._motATrouver = mot;
         this._input = new Input(this, this._config, this._motATrouver.length, this._motATrouver[0]);
         this._panelManager.setInput(this._input);
-        this._grille = new Grille(this._motATrouver.length, this._maxNbPropositions, this._motATrouver[0], this._audioPanel);
+        this._grille = new Grille(this._motATrouver.length, this._nbLignesMinimum, this._motATrouver[0], this._audioPanel);
         this._configurationPanel.setInput(this._input);
         this._compositionMotATrouver = this.decompose(this._motATrouver);
         await this.chargerPropositions(partieEnCours.propositions);
@@ -128,8 +129,9 @@ export default class Gestionnaire {
     let estVictoire = this._resultats.some((resultat) => resultat.every((item) => item.statut === LettreStatut.BienPlace));
     if (estVictoire) {
       this._stats.partiesGagnees++;
-      let nbEssais = this._resultats.length;
-      if (nbEssais >= 1 && nbEssais <= 6) {
+      // Au-delà de 6 essais, la partie est comptée dans la colonne « 6+ »
+      let nbEssais = Math.min(this._resultats.length, 6);
+      if (nbEssais >= 1) {
         this._stats.repartition[nbEssais as 1 | 2 | 3 | 4 | 5 | 6]++;
       }
     } else {
@@ -210,7 +212,7 @@ export default class Gestionnaire {
     this._propositions.push(mot);
     this._resultats.push(resultats);
 
-    if (isBonneReponse || this._propositions.length === this._maxNbPropositions) {
+    if (isBonneReponse) {
       if (!this._dateFinPartie) this._dateFinPartie = new Date();
       let duree = (this._dateFinPartie.getTime() - this._datePartieEnCours.getTime()) % 86400000;
       this._finDePartiePanel.genererResume(isBonneReponse, this._motATrouver, this._resultats, duree);
@@ -221,7 +223,7 @@ export default class Gestionnaire {
       this._grille.validerMot(mot, resultats, isBonneReponse, chargementPartie, () => {
         if (this._input) {
           this._input.updateClavier(resultats);
-          if (isBonneReponse || this._propositions.length === this._maxNbPropositions) {
+          if (isBonneReponse) {
             this._finDePartiePanel.afficher();
           } else {
             // La partie n'est pas fini, on débloque
@@ -330,7 +332,7 @@ export default class Gestionnaire {
         this._motATrouver = mot;
         this._input = new Input(this, this._config, this._motATrouver.length, this._motATrouver[0]);
         this._panelManager.setInput(this._input);
-        this._grille = new Grille(this._motATrouver.length, this._maxNbPropositions, this._motATrouver[0], this._audioPanel);
+        this._grille = new Grille(this._motATrouver.length, this._nbLignesMinimum, this._motATrouver[0], this._audioPanel);
         this._configurationPanel.setInput(this._input);
         this._compositionMotATrouver = this.decompose(this._motATrouver);
         await this.chargerPropositions(partieEnCours.propositions);

@@ -201,7 +201,8 @@ export default class Sauvegardeur {
     let dataConfig = localStorage.getItem(this._cleConfiguration);
     if (!dataConfig) return null;
 
-    let config = JSON.parse(dataConfig) as Configuration;
+    // Les réglages absents de la sauvegarde (ex. ajoutés depuis) prennent leur valeur par défaut
+    let config = { ...Configuration.Default, ...(JSON.parse(dataConfig) as Partial<Configuration>) };
     return config;
   }
 

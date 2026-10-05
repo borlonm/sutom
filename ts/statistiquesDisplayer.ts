@@ -39,7 +39,7 @@ export default class StatistiquesDisplayer {
     statsParties.appendChild(this.creerBar("3", stats.repartition[3], max));
     statsParties.appendChild(this.creerBar("4", stats.repartition[4], max));
     statsParties.appendChild(this.creerBar("5", stats.repartition[5], max));
-    statsParties.appendChild(this.creerBar("6", stats.repartition[6], max));
+    statsParties.appendChild(this.creerBar("6+", stats.repartition[6], max));
     statsParties.appendChild(this.creerBar("-", stats.repartition["-"], max));
     statsParties.appendChild(this.creerLigneValeur("Nombre total de parties jouées", this.intToString(stats.partiesJouees)));
 
@@ -160,13 +160,13 @@ export default class StatistiquesDisplayer {
 
     return `🟡 Statistiques de #SUTOM 🟡
 
-1/6 - ${this.genererBarTexte(stats.repartition[1], max)} ${stats.repartition[1]}
-2/6 - ${this.genererBarTexte(stats.repartition[2], max)} ${stats.repartition[2]}
-3/6 - ${this.genererBarTexte(stats.repartition[3], max)} ${stats.repartition[3]}
-4/6 - ${this.genererBarTexte(stats.repartition[4], max)} ${stats.repartition[4]}
-5/6 - ${this.genererBarTexte(stats.repartition[5], max)} ${stats.repartition[5]}
-6/6 - ${this.genererBarTexte(stats.repartition[6], max)} ${stats.repartition[6]}
--/6 - ${this.genererBarTexte(stats.repartition["-"], max)} ${stats.repartition["-"]}
+1 - ${this.genererBarTexte(stats.repartition[1], max)} ${stats.repartition[1]}
+2 - ${this.genererBarTexte(stats.repartition[2], max)} ${stats.repartition[2]}
+3 - ${this.genererBarTexte(stats.repartition[3], max)} ${stats.repartition[3]}
+4 - ${this.genererBarTexte(stats.repartition[4], max)} ${stats.repartition[4]}
+5 - ${this.genererBarTexte(stats.repartition[5], max)} ${stats.repartition[5]}
+6+ - ${this.genererBarTexte(stats.repartition[6], max)} ${stats.repartition[6]}
+Perdu - ${this.genererBarTexte(stats.repartition["-"], max)} ${stats.repartition["-"]}
 
 Moy. : ${this.getMoyenne(stats.repartition).toLocaleString("fr-FR", { maximumFractionDigits: 2 })}
 ${stats.lettresRepartitions.bienPlace}🟥- ${stats.lettresRepartitions.malPlace}🟡- ${stats.lettresRepartitions.nonTrouve}🟦`;

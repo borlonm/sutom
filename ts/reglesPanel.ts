@@ -22,7 +22,7 @@ export default class ReglesPanel {
     let titre = "Règles";
     let contenu =
       "<p>" +
-      "Vous avez six essais pour deviner le mot du jour, entre 6 et 10 lettres, commun à tous.<br />" +
+      "Vous avez autant d'essais que vous voulez pour deviner le mot du jour, entre 6 et 10 lettres, commun à tous.<br />" +
       "Vous ne pouvez proposer que des mots commençant par la même lettre que le mot recherché, et qui se trouvent dans notre dictionnaire.<br />" +
       "Les noms propres ne sont pas acceptés.<br />" +
       "Le mot change chaque jour. Évitez donc les spoils et privilégiez le bouton de partage.<br />" +

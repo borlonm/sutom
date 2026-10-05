@@ -82,7 +82,7 @@ export default class FinDePartiePanel {
       numeroGrille +
       " " +
       (estBonneReponse ? resultats.length : "-") +
-      "/6" +
+      "/∞" +
       (afficherChrono ? " " + TempsHelper.genererTempsHumain(dureeMs) : "") +
       "\n\n";
     this._resumeTexte = entete + resultatsEmojis.join("\n");

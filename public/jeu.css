@@ -100,6 +100,8 @@ h1 {
   margin-right: auto;
   background-color: var(--couleur-fond-grille);
   min-height: calc(6 * var(--taille-cellule) + 10 * var(--epaisseur-bordure-cellule));
+  /* Essais illimités : la grille grandit jusqu'au clavier, puis défile au lieu de le pousser */
+  overflow-y: auto;
   margin-bottom: auto;
   font-size: 32px;
 }

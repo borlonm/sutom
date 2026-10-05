@@ -2,6 +2,7 @@ import express from "express";
 import http from "http";
 import fs from "fs";
 import InstanceConfiguration from "./instanceConfiguration";
+import ListeMotsProposables from "./mots/listeMotsProposables";
 
 const app = express();
 const port = parseInt(String(process.env.SUTOM_PORT), 10) || 4200;
@@ -13,7 +14,7 @@ const port = parseInt(String(process.env.SUTOM_PORT), 10) || 4200;
   app.use("/mots", express.static("public/mots/"));
   app.use("/node_modules/requirejs/require.js", express.static("node_modules/requirejs/require.js"));
 
-  // Vu que le serveur node est prévu pour du test, on va créer un mot du jour s'il n'existe pas
+  // Vu que le serveur node est prévu pour du test, on va créer un mot du jour s'il n'existe pas (tiré au hasard dans le dictionnaire)
   let datePartie = new Date();
   let datePartieStr =
     datePartie.getFullYear().toString() +
@@ -27,7 +28,9 @@ const port = parseInt(String(process.env.SUTOM_PORT), 10) || 4200;
   const adresseFichierMot = "public/mots/" + nomFichier + ".txt";
   fs.access(adresseFichierMot, fs.constants.F_OK, (err) => {
     if (err) {
-      fs.writeFile(adresseFichierMot, "DIFFUSION", (err) => {
+      const dictionnaire = ListeMotsProposables.Dictionnaire;
+      const motAleatoire = dictionnaire[Math.floor(Math.random() * dictionnaire.length)];
+      fs.writeFile(adresseFichierMot, motAleatoire, (err) => {
         if (err) console.error(err);
       });
     }
