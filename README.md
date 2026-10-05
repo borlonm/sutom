@@ -16,11 +16,39 @@ Pour pouvoir travailler en local, il faut commencer par installer ce qu'il faut 
 npm i
 ```
 
-Puis, on lance le serveur :
+Puis on génère les listes de mots (une seule fois, elles ne sont pas versionnées) :
+
+```sh
+node utils/nettoyage.js
+```
+
+Et on lance le serveur :
 
 ```sh
 npm run start:dev
 ```
+
+Les tests du serveur (API, chrono, groupes…) se lancent avec :
+
+```sh
+npm test
+```
+
+### Serveur et données
+
+Le jeu (`ts/`) tourne dans le navigateur ; le serveur (`serveur/`) garde le mot du jour, les comptes, les groupes et les parties dans une base SQLite (`data/sutom.db`). Le mot du jour ne quitte jamais le serveur : le navigateur envoie chaque essai à l'API et reçoit le résultat lettre par lettre.
+
+Variables d'environnement :
+
+| Variable | Rôle | Par défaut |
+|---|---|---|
+| `SUTOM_PORT` | Port d'écoute | `4200` |
+| `SUTOM_BDD` | Fichier SQLite | `data/sutom.db` |
+| `SUTOM_SOURCE_MOT` | `officiel` (mot du jour de sutom.nocle.fr, avec l'accord de son auteur) ou `locale` (mot au hasard) | `officiel` si `NODE_ENV=production`, sinon `locale` |
+| `SUTOM_FUSEAU` | Fuseau du jeu (un mot va de minuit à minuit) | `Europe/Brussels` |
+| `SUTOM_COOKIE_SECURISE` | `1` pour réserver le cookie de session au HTTPS | désactivé |
+
+En local, supprimer `data/sutom.db` repart d'une base vide (nouveau mot, aucun compte).
 
 ### Avec Docker
 
@@ -29,12 +57,12 @@ Un Dockerfile est disponible pour pouvoir démarrer le site en local sans `npm`.
 ```sh
 docker build --build-arg MODE=development -t sutom .
 
-docker run -it --rm -p 4000:4000 sutom npm run start:dev
+docker run -it --rm -p 4200:4200 sutom npm run start:dev
 ```
 
 ### Accès au site
 
-Une fois démarré, le site sera dispo sur http://localhost:4000 et le typescript va se recompiler tout seul à chaque modification de fichier.
+Une fois démarré, le site sera dispo sur http://localhost:4200 et le typescript va se recompiler tout seul à chaque modification de fichier.
 
 ## Déployer en production
 
@@ -44,9 +72,10 @@ Pour déployer en production, on installe les dépendances :
 
 ```sh
 npm install --production
+node utils/nettoyage.js
 ```
 
-Puis on lance le serveur :
+Puis on lance le serveur (avec `NODE_ENV=production`, le mot du jour vient du site officiel) :
 
 ```sh
 npm start
@@ -59,7 +88,7 @@ On lance Docker en production en créant l'image et en la lançant sans les opti
 ```sh
 docker build -t sutom .
 
-docker run -it --rm -p 4000:4000 sutom
+docker run -it --rm -p 4200:4200 -v sutom-data:/app/data sutom
 ```
 
 ## Autres infos et remerciements
