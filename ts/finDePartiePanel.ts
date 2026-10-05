@@ -9,9 +9,14 @@ import PanelManager from "./panelManager";
 import Sauvegardeur from "./sauvegardeur";
 import StatistiquesDisplayer from "./statistiquesDisplayer";
 import TempsHelper from "./tempsHelper";
+import Api, { GroupeApi, ResultatsDuJourApi } from "./api";
+import Session from "./session";
+import ResultatsDisplayer from "./resultatsDisplayer";
+import { el } from "./dom";
 
 export default class FinDePartiePanel {
-  private readonly _datePartie: Date;
+  private _numeroGrille: number = 0;
+  private _dateGrille: string = "";
   private readonly _panelManager: PanelManager;
   private readonly _statsButton: HTMLElement;
   private readonly _gestionnaire: Gestionnaire;
@@ -22,9 +27,7 @@ export default class FinDePartiePanel {
   private _estVictoire: boolean = false;
   private _partieEstFinie: boolean = false;
 
-  public constructor(datePartie: Date, panelManager: PanelManager, gestionnaire: Gestionnaire) {
-    this._datePartie = new Date(datePartie);
-    this._datePartie.setHours(0, 0, 0);
+  public constructor(panelManager: PanelManager, gestionnaire: Gestionnaire) {
     this._panelManager = panelManager;
     this._statsButton = document.getElementById("configuration-stats-bouton") as HTMLElement;
     this._gestionnaire = gestionnaire;
@@ -35,6 +38,13 @@ export default class FinDePartiePanel {
         this.afficher();
       }).bind(this)
     );
+  }
+
+  // Numéro et date (AAAA-MM-JJ) de la grille, donnés par le serveur
+  public definirPartie(numeroGrille: number, dateGrille: string): void {
+    this._numeroGrille = numeroGrille;
+    this._dateGrille = dateGrille;
+    this._partieEstFinie = false;
   }
 
   public genererResume(estBonneReponse: boolean, motATrouver: string, resultats: Array<Array<LettreResultat>>, dureeMs: number): void {
@@ -67,19 +77,15 @@ export default class FinDePartiePanel {
           }
         }, "")
     );
-    let dateGrille = this._datePartie.getTime();
-    let origine = InstanceConfiguration.dateOrigine.getTime();
     this._motATrouver = motATrouver;
     this._estVictoire = estBonneReponse;
     this._partieEstFinie = true;
-
-    let numeroGrille = Math.round((dateGrille - origine) / (24 * 3600 * 1000)) + 1;
 
     let afficherChrono = (Sauvegardeur.chargerConfig() ?? Configuration.Default).afficherChrono;
 
     const entete =
       "#SUTOM #" +
-      numeroGrille +
+      this._numeroGrille +
       " " +
       (estBonneReponse ? resultats.length : "-") +
       "/∞" +
@@ -117,20 +123,9 @@ export default class FinDePartiePanel {
       }
       contenu += StatistiquesDisplayer.genererResumeTexte(this._resumeTexteLegacy).outerHTML;
 
-      if (Sauvegardeur.hasPartieVeilleNonTerminee()) {
-        const partieVeilleArea = document.createElement("div");
-        partieVeilleArea.id = "fin-de-partie-panel-partie-veille-area";
-
-        const partieVeilleLabel = document.createElement("div");
-        partieVeilleLabel.innerText = "Il semblerait que vous n'avez pas terminé votre partie d'hier…";
-        partieVeilleArea.appendChild(partieVeilleLabel);
-
-        partieVeilleArea.appendChild(CopieHelper.creerBoutonAvecIcone("fin-de-partie-panel-reset-bouton", "#icone-restaure", "Terminer la partie"));
-
-        contenu += partieVeilleArea.outerHTML;
-      } else {
-        Sauvegardeur.restaurerDonneesDuJour();
-      }
+      // Remplis après coup : résultats des groupes et partie de la veille viennent du serveur quand on est connecté
+      if (Session.joueur) contenu += '<div id="fin-de-partie-panel-groupes"></div>';
+      contenu += '<div id="fin-de-partie-panel-partie-veille-area"></div>';
     }
 
     let stats = Sauvegardeur.chargerSauvegardeStats();
@@ -143,19 +138,64 @@ export default class FinDePartiePanel {
     if (this._partieEstFinie) this.attacherPartage();
     if (stats) this.attacherPartageStats(stats);
 
-    const resetButton = document.getElementById("fin-de-partie-panel-reset-bouton") as HTMLElement;
-    if (resetButton) {
-      const veille = new Date();
-      veille.setDate(veille.getDate() - 1);
-      resetButton.addEventListener(
-        "click",
-        (() => {
-          this._gestionnaire.chargerPartieAncienne(veille, Sauvegardeur.chargerPartieVeille());
-          this._panelManager.cacherPanel();
-        }).bind(this)
-      );
-    }
     this._panelManager.afficherPanel();
+
+    if (this._partieEstFinie) {
+      this.afficherPartieVeille();
+      if (Session.joueur) this.afficherResultatsGroupes();
+    }
+  }
+
+  private afficherPartieVeille(): void {
+    this._gestionnaire.partieVeilleATerminer().then((aTerminer) => {
+      const zone = document.getElementById("fin-de-partie-panel-partie-veille-area");
+      if (!zone) return;
+      if (!aTerminer) {
+        if (!Session.joueur) Sauvegardeur.restaurerDonneesDuJour();
+        return;
+      }
+      const label = document.createElement("div");
+      label.innerText = "Il semblerait que vous n'avez pas terminé votre partie d'hier…";
+      zone.appendChild(label);
+      const resetButton = CopieHelper.creerBoutonAvecIcone("fin-de-partie-panel-reset-bouton", "#icone-restaure", "Terminer la partie");
+      resetButton.addEventListener("click", (event) => {
+        event.preventDefault();
+        this._gestionnaire.jouerPartieVeille();
+        this._panelManager.cacherPanel();
+      });
+      zone.appendChild(resetButton);
+    });
+  }
+
+  // Résultats de chaque groupe pour cette grille (le serveur ne les donne qu'une fois le mot trouvé)
+  private afficherResultatsGroupes(): void {
+    const dateGrille = this._dateGrille;
+    Api.requete<{ groupes: Array<GroupeApi> }>("GET", "/groupes")
+      .then((reponse) =>
+        Promise.all(
+          reponse.groupes.map((groupe) =>
+            Api.requete<ResultatsDuJourApi>("GET", `/groupes/${groupe.id}/resultats/${dateGrille}`).then((resultats) => ({ groupe, resultats }))
+          )
+        )
+      )
+      .then(
+        (liste) => {
+          const zone = document.getElementById("fin-de-partie-panel-groupes");
+          if (!zone) return;
+          if (liste.length === 0) {
+            zone.appendChild(el("p", { class: "fin-de-partie-panel-phrase" }, "Créez ou rejoignez un groupe (icône compte) pour comparer vos temps."));
+            return;
+          }
+          liste.forEach(({ groupe, resultats }, index) => {
+            if (index === 0) zone.appendChild(ResultatsDisplayer.genererEntete(resultats));
+            zone.appendChild(el("h3", {}, groupe.nom));
+            zone.appendChild(ResultatsDisplayer.genererTableau(resultats, (id) => this._gestionnaire.espaceJoueur.afficherProfil(id)));
+          });
+        },
+        () => {
+          // Résultats indisponibles : le reste du panneau suffit
+        }
+      );
   }
 
   private attacherPartageStats(stats: SauvegardeStats): void {

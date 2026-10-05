@@ -9,6 +9,12 @@ import Sauvegardeur from "./sauvegardeur";
 export enum ContexteBloquage {
   ValidationMot,
   Panel,
+  AttenteDebut,
+}
+
+// Les touches tapées dans un champ de formulaire (connexion, groupes…) ne vont pas dans la grille
+function estChampDeSaisie(cible: EventTarget | null): boolean {
+  return cible instanceof HTMLInputElement || cible instanceof HTMLTextAreaElement || cible instanceof HTMLSelectElement;
 }
 
 export default class Input {
@@ -182,6 +188,7 @@ export default class Input {
     document.addEventListener(
       "keypress",
       ((event: KeyboardEvent) => {
+        if (estChampDeSaisie(event.target)) return;
         event.stopPropagation();
         let touche = event.key;
 
@@ -197,6 +204,7 @@ export default class Input {
     document.addEventListener(
       "keydown",
       ((event: KeyboardEvent) => {
+        if (estChampDeSaisie(event.target)) return;
         event.stopPropagation();
         let touche = event.key;
 
